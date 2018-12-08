@@ -5,9 +5,23 @@ using System.Reflection;
 namespace Asteroids
 {
     /// <summary>
+    /// столкновение
+    /// </summary>
+    interface ICollision
+    {
+        /// <summary>
+        /// столкновение
+        /// </summary>
+        /// <param name="obj">второй объект</param>
+        /// <returns>true/false - объекты столкнулись</returns>
+        bool Collision( ICollision obj );
+        Rectangle Rect { get; }
+    }
+
+    /// <summary>
     /// бзовый класс для отрисовки фугур
     /// </summary>
-    abstract class BaseObject
+    abstract class BaseObject: ICollision
     {
         /// <summary>
         /// позиция объекта
@@ -23,9 +37,9 @@ namespace Asteroids
         protected Size Size;
 
         /// <summary>
-        /// статический конструктор базового объекта
+        /// прямоугольник по размеру текущего объекта
         /// </summary>
-        static BaseObject(){}
+        public Rectangle Rect => new Rectangle( Pos, Size );
 
         /// <summary>
         /// конструктор базового объекта
@@ -33,33 +47,34 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">скорость и направление смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public BaseObject( Point pos, Point dir, Size size )
+        protected BaseObject( Point pos, Point dir, Size size )
         {
             Pos = pos;
             Dir = dir;
             Size = size;
         }
-        
+
         /// <summary>
         /// отрисовка объекта
         /// </summary>
-        public virtual void Draw()
-        {
-            Game.Buffer.Graphics.DrawEllipse( Pens.White, Pos.X, Pos.Y, Size.Width, Size.Height );
-        }
-        
+        public abstract void Draw();
+
         /// <summary>
         /// вычисление новых координат объекта
         /// </summary>
-        public virtual void Update()
-        {
-            Pos.X = Pos.X + Dir.X;
-            Pos.Y = Pos.Y + Dir.Y;
-            if (Pos.X < 0) Dir.X = -Dir.X;
-            if (Pos.X > Game.Width) Dir.X = -Dir.X;
-            if (Pos.Y < 0) Dir.Y = -Dir.Y;
-            if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
-        }
+        public abstract void Update();
+        
+        /// <summary>
+        /// обработка событий покидания пределов экрана и столкновений
+        /// </summary>
+        public abstract void Reset();
+
+        /// <summary>
+        /// реализация ICollision
+        /// </summary>
+        /// <param name="o">второй объект столкновения</param>
+        /// <returns>координаты пересеклись</returns>
+        public bool Collision( ICollision o ) => o.Rect.IntersectsWith( this.Rect );
     }
 
     /// <summary>
@@ -102,7 +117,15 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X - Dir.X;
-            if (Pos.X < 0) Pos.X = Game.Width + Size.Width;
+            if (Pos.X < 0) this.Reset();
+        }
+
+        /// <summary>
+        /// обработка покидания границ экрана
+        /// </summary>
+        public override void Reset()
+        {
+            this.Pos.X = Game.Width + Size.Width;
         }
     }
 
@@ -124,6 +147,8 @@ namespace Asteroids
         /// </summary>
         private Image image;
 
+        public int Power { get; set; }
+
         /// <summary>
         /// статический конструктор - инициализация коллекции картинок и рандомайзера
         /// </summary>
@@ -144,6 +169,7 @@ namespace Asteroids
         public Asteroid( Point pos, Point dir, Size size ) : base( pos, dir, size )
         {
             image = imageColl[rand.Next(0, 2)];
+            Power = 1;
         }
 
         /// <summary>
@@ -159,7 +185,22 @@ namespace Asteroids
         /// </summary>
         public override void Update()
         {
-            base.Update();
+            Pos.X = Pos.X + Dir.X;
+            Pos.Y = Pos.Y + Dir.Y;
+            if (Pos.X < 0) Dir.X = -Dir.X;
+            if (Pos.X > Game.Width) Dir.X = -Dir.X;
+            if (Pos.Y < 0) Dir.Y = -Dir.Y;
+            if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+        }
+
+        /// <summary>
+        /// обработка столкновения с объектом Bullet
+        /// </summary>
+        public override void Reset()
+        {
+            Random rand = new Random( 0 );
+            int r = rand.Next( 0, Game.Height );
+            this.Pos = new Point( Game.Width, r );
         }
     }
 
@@ -210,11 +251,14 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X - Dir.X;
-            if (Pos.X > Game.Width)
-            {
-                Pos.X = 0;
-                Pos.Y = rand.Next(Game.Height);
-            }
+            if (Pos.X > Game.Width) this.Reset();
+        }
+
+        //обработка покидания границ экрана
+        public override void Reset()
+        {
+            Pos.X = 0;
+            Pos.Y = rand.Next( Game.Height );
         }
     }
 
@@ -248,7 +292,58 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X - Dir.X;
-            if (Pos.X < 0) Pos.X = Game.Width + Size.Width;
+            if (Pos.X < 0) this.Reset();
+        }
+
+        /// <summary>
+        /// обработка покидания границ экрана
+        /// </summary>
+        public override void Reset()
+        {
+            this.Pos.X = Game.Width + Size.Width;
+        }
+    }
+
+    /// <summary>
+    /// Объект Пуля
+    /// </summary>
+    class Bullet: BaseObject
+    {
+        /// <summary>
+        /// конструктор объекта Пуля
+        /// </summary>
+        /// <param name="pos">позиция объекта</param>
+        /// <param name="dir">направление и скорость смещения объекта</param>
+        /// <param name="size">размер объекта</param>
+        public Bullet( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        {
+        }
+
+        /// <summary>
+        /// отрисовка объекта Пуля
+        /// </summary>
+        public override void Draw()
+        {
+            Game.Buffer.Graphics.DrawRectangle( Pens.OrangeRed, Pos.X, Pos.Y, Size.Width, Size.Height );
+        }
+
+        /// <summary>
+        /// вычисление новых координат объекта Пуля
+        /// </summary>
+        public override void Update()
+        {
+            Pos.X = Pos.X + 3;
+            if (Pos.X > Game.Width) this.Reset();
+        }
+
+        /// <summary>
+        /// перенос объекта в начало экрана в случайную позицию по высоте
+        /// </summary>
+        public override void Reset()
+        {
+            Random rand = new Random( 0 );
+            int r = rand.Next( 0, Game.Height );
+            this.Pos = new Point( 0, r );
         }
     }
 }

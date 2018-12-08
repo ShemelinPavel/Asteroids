@@ -11,23 +11,55 @@ namespace Asteroids
         private static BufferedGraphicsContext _context;
         public static BufferedGraphics Buffer;
         // Свойства
-        // Ширина и высота игрового поля
+
+        /// <summary>
+        /// ширина игрового поля
+        /// </summary>
         public static int Width { get; set; }
+
+        /// <summary>
+        /// высота игрового поля
+        /// </summary>
         public static int Height { get; set; }
+
+        /// <summary>
+        /// коллекция объектов игры
+        /// </summary>
         public static BaseObject[] _objs;
 
+        /// <summary>
+        /// рандомайзер
+        /// </summary>
         private static Random rand;
 
+        /// <summary>
+        /// объект Пуля
+        /// </summary>
+        private static Bullet _bullet;
+
+        /// <summary>
+        /// конструктор
+        /// </summary>
         static Game()
         {
             rand = new Random( 0 );
         }
+        
         /// <summary>
         /// инициализация игрового поля
         /// </summary>
         /// <param name="form"></param>
         public static void Init( Form form )
         {
+            if(form.ClientSize.Width > 1000)
+            {
+                throw new ArgumentOutOfRangeException( "Width", "Ширина окна превышает 1000 точек" );
+            }
+            if (form.ClientSize.Height > 1000)
+            {
+                throw new ArgumentOutOfRangeException( "Height", "Высота окна превышает 1000 точек" );
+            }
+
             // Графическое устройство для вывода графики            
             Graphics g;
             // Предоставляет доступ к главному буферу графического контекста для текущего приложения
@@ -81,7 +113,19 @@ namespace Asteroids
         public static void Update()
         {
             foreach (BaseObject obj in _objs)
+            {
                 obj.Update();
+
+                if (obj is Asteroid)
+                {
+                    if (obj.Collision( _bullet ))
+                    {
+                        System.Media.SystemSounds.Hand.Play();
+                        _bullet.Reset();
+                        obj.Reset();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -89,26 +133,31 @@ namespace Asteroids
         /// </summary>
         public static void Load()
         {
-            _objs = new BaseObject[60];
+            _objs = new BaseObject[40];
+
+            //пуля
+            _bullet = new Bullet( new Point( 0, 200 ), new Point( 5, 0 ), new Size( 4, 1 ) );
+            _objs[0] = _bullet;
 
             //летающая тарелка
-            //запускаем сначала ее, чтобы астероиды все двигались
-            _objs[0] = new Ufo( new Point( 600, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ) );
+            //запускем сначала ее, чтобы астероиды все двигались
+            _objs[1] = new Ufo( new Point( 600, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ) );
 
             //астероиды
-            for (int i = 1; i <= 15; i++)
+            for (int i = 2; i <= 6; i++)
             {
-                _objs[i] = new Asteroid( new Point( 600, i * 20 ), new Point( -i, -i * 2 ), new Size( 20, 20 ) );
+                int r = rand.Next( 5, 50 );
+                _objs[i] = new Asteroid( new Point( 600, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ) );
             }
 
             //звезды
-            for (int i = 16; i <= 35; i++)
+            for (int i = 7; i <= 15; i++)
             {
                 _objs[i] = new Star( new Point( 600,  rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ) );
             }
 
             //звездная пыль
-            for (int i = 36; i < _objs.Length; i++)
+            for (int i = 16; i < _objs.Length; i++)
             {
                 _objs[i] = new StarDust( new Point( 600, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ) );
             }
