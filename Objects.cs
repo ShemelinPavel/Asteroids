@@ -26,7 +26,7 @@ namespace Asteroids
     /// <summary>
     /// бзовый класс для отрисовки фугур
     /// </summary>
-    abstract class BaseObject: ICollision
+    abstract class BaseObject : ICollision
     {
         /// <summary>
         /// позиция объекта
@@ -68,7 +68,7 @@ namespace Asteroids
         /// вычисление новых координат объекта
         /// </summary>
         public abstract void Update();
-        
+
         /// <summary>
         /// обработка событий покидания пределов экрана и столкновений
         /// </summary>
@@ -106,7 +106,7 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Star( Point pos, Point dir, Size size ) : base( pos, dir, size ) {}
+        public Star( Point pos, Point dir, Size size ) : base( pos, dir, size ) { }
 
         /// <summary>
         /// отрисовка объекта Звезда
@@ -134,11 +134,17 @@ namespace Asteroids
         }
     }
 
+    #region Asteroid
     /// <summary>
     /// Астероид - объект-препятствие
     /// </summary>
     class Asteroid : BaseObject
     {
+        /// <summary>
+        /// событие - взрыв объекта Астероид
+        /// </summary>
+        public event EventHandler eventAstBlow;
+
         /// <summary>
         /// коллекция картинок
         /// </summary>
@@ -147,21 +153,48 @@ namespace Asteroids
         /// рандомайзер
         /// </summary>
         static private Random rand;
+
         /// <summary>
         /// картинка
         /// </summary>
         private Image image;
 
+        /// <summary>
+        /// счетчик кадров взрыва
+        /// </summary>
+        private ushort blowCounter;
+        /// <summary>
+        /// счетчик кадров взрыва
+        /// </summary>
+        public ushort BlowCounter
+        {
+            get { return blowCounter; }
+            set { blowCounter = value; }
+        }
+
         public int Power { get; set; }
+
+        /// <summary>
+        /// объект Астероид взорван
+        /// </summary>
+        private bool isBlow;
+        /// <summary>
+        /// объект Астероид взорван
+        /// </summary>
+        public bool IsBlow => isBlow;
 
         /// <summary>
         /// статический конструктор - инициализация коллекции картинок и рандомайзера
         /// </summary>
         static Asteroid()
         {
-            imageColl = new Image[2];
+            imageColl = new Image[5];
             imageColl[0] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid1.png" ) );
             imageColl[1] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid2.png" ) );
+            imageColl[2] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow0.png" ) );
+            imageColl[3] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow1.png" ) );
+            imageColl[4] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow2.png" ) );
+
             rand = new Random( 0 );
         }
 
@@ -173,8 +206,9 @@ namespace Asteroids
         /// <param name="size">размер объекта</param>
         public Asteroid( Point pos, Point dir, Size size ) : base( pos, dir, size )
         {
-            image = imageColl[rand.Next(0, 2)];
+            image = imageColl[rand.Next( 0, 2 )];
             Power = 1;
+            BlowCounter = 0;
         }
 
         /// <summary>
@@ -182,7 +216,22 @@ namespace Asteroids
         /// </summary>
         public override void Draw()
         {
-            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
+            if (blowCounter == 1)
+            {
+                Game.Buffer.Graphics.DrawImage( imageColl[2], new Rectangle( this.Pos, this.Size ) );
+            }
+            else if (blowCounter == 2)
+            {
+                Game.Buffer.Graphics.DrawImage( imageColl[3], new Rectangle( this.Pos, this.Size ) );
+            }
+            else if (blowCounter == 3)
+            {
+                Game.Buffer.Graphics.DrawImage( imageColl[4], new Rectangle( this.Pos, this.Size ) );
+            }
+            else
+            {
+                Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
+            }
         }
 
         /// <summary>
@@ -190,12 +239,26 @@ namespace Asteroids
         /// </summary>
         public override void Update()
         {
-            Pos.X = Pos.X + Dir.X;
-            Pos.Y = Pos.Y + Dir.Y;
-            if (Pos.X < 0) Dir.X = -Dir.X;
-            if (Pos.X > Game.Width) Dir.X = -Dir.X;
-            if (Pos.Y < 0) Dir.Y = -Dir.Y;
-            if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+            if (!( IsBlow ))
+            {
+                if (blowCounter == 0)
+                {
+                    Pos.X = Pos.X + Dir.X;
+                    Pos.Y = Pos.Y + Dir.Y;
+                    if (Pos.X < 0) Dir.X = -Dir.X;
+                    if (Pos.X > Game.Width) Dir.X = -Dir.X;
+                    if (Pos.Y < 0) Dir.Y = -Dir.Y;
+                    if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+                }
+                else if (blowCounter == 3)
+                {
+                    Blow();
+                }
+                else
+                {
+                    blowCounter++;
+                }
+            }
         }
 
         /// <summary>
@@ -207,8 +270,33 @@ namespace Asteroids
             int r = rand.Next( 0, Game.Height );
             this.Pos = new Point( Game.Width, r );
         }
-    }
 
+        /// <summary>
+        /// Окончание взрыва
+        /// </summary>
+        private void Blow()
+        {
+            this.isBlow = true;
+
+            EventHandler handler = eventAstBlow;
+            if (handler != null)
+            {
+                EventArgs e = new EventArgs();
+                handler( this, e );
+            }
+        }
+        
+        /// <summary>
+        /// Начало взрыва
+        /// </summary>
+        public void StartBlow()
+        {
+            BlowCounter++;
+        }
+    }
+    #endregion Asteroid
+
+    #region Ufo
     /// <summary>
     /// Летающая тарелка - объект для формирования фона
     /// </summary>
@@ -266,7 +354,9 @@ namespace Asteroids
             Pos.Y = rand.Next( Game.Height );
         }
     }
+    #endregion Ufo
 
+    #region StarDust
     /// <summary>
     /// Звездная пыль - объект для формирования фона
     /// </summary>
@@ -308,11 +398,13 @@ namespace Asteroids
             this.Pos.X = Game.Width + Size.Width;
         }
     }
+    #endregion StarDust
 
+    #region Bullet
     /// <summary>
     /// Объект Пуля
     /// </summary>
-    class Bullet: BaseObject
+    class Bullet : BaseObject
     {
         /// <summary>
         /// конструктор объекта Пуля
@@ -351,7 +443,9 @@ namespace Asteroids
             this.Pos = new Point( 0, r );
         }
     }
+    #endregion Bullet
 
+    #region Ship
     /// <summary>
     /// Корабль - объект управления игрока
     /// </summary>
@@ -372,7 +466,7 @@ namespace Asteroids
         {
             image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Ship.png" ) );
         }
-        
+
         /// <summary>
         /// уменьшение жизни объекта Корабль
         /// </summary>
@@ -423,4 +517,5 @@ namespace Asteroids
         /// </summary>
         public static event Message MessageDie;
     }
+    #endregion Ship
 }
