@@ -194,7 +194,7 @@ namespace Asteroids
             }
 
             //звездная пыль
-            for (int i = 0; i <= 19; i++)
+            for (int i = 1; i <= 19; i++)
             {
                 _objs[i] = new StarDust( new Point( 600, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ) );
             }
