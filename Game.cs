@@ -38,20 +38,36 @@ namespace Asteroids
         private static Bullet _bullet;
 
         /// <summary>
+        /// коллекция объектов Астероид
+        /// </summary>
+        private static Asteroid[] _asteroids;
+
+        /// <summary>
+        /// объект Корабль
+        /// </summary>
+        private static Ship _ship;
+
+        /// <summary>
+        /// таймер
+        /// </summary>
+        private static Timer _timer = new Timer() { Interval = 100 };
+
+
+        /// <summary>
         /// конструктор
         /// </summary>
         static Game()
         {
             rand = new Random( 0 );
         }
-        
+
         /// <summary>
         /// инициализация игрового поля
         /// </summary>
         /// <param name="form"></param>
         public static void Init( Form form )
         {
-            if(form.ClientSize.Width > 1000)
+            if (form.ClientSize.Width > 1000)
             {
                 throw new ArgumentOutOfRangeException( "Width", "Ширина окна превышает 1000 точек" );
             }
@@ -75,9 +91,24 @@ namespace Asteroids
             //загрузка 
             Load();
 
-            Timer timer = new Timer { Interval = 100 };
-            timer.Start();
-            timer.Tick += Timer_Tick;
+            _timer.Start();
+            _timer.Tick += Timer_Tick;
+
+            form.KeyDown += Form_KeyDown;
+
+            Ship.MessageDie += Finish;
+        }
+
+        /// <summary>
+        /// обработчик события нажатия клавиши
+        /// </summary>
+        /// <param name="sender">объект-источник событие</param>
+        /// <param name="e">параметры события</param>
+        private static void Form_KeyDown( object sender, KeyEventArgs e )
+        {
+            if (e.KeyCode == Keys.ControlKey) _bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ) );
+            if (e.KeyCode == Keys.Up) _ship.Up();
+            if (e.KeyCode == Keys.Down) _ship.Down();
         }
 
         /// <summary>
@@ -96,14 +127,18 @@ namespace Asteroids
         /// </summary>
         public static void Draw()
         {
-            // Проверяем вывод графики
-            //Buffer.Graphics.Clear( Color.Black );
-            //Buffer.Graphics.DrawRectangle( Pens.White, new Rectangle( 100, 100, 200, 200 ) );
-            //Buffer.Graphics.FillEllipse( Brushes.Wheat, new Rectangle( 100, 100, 200, 200 ) );
-            //Buffer.Render();
-
             Buffer.Graphics.Clear( Color.Black );
             foreach (BaseObject obj in _objs) obj.Draw();
+
+            foreach (Asteroid a in _asteroids)
+            {
+                a?.Draw();
+            }
+
+            _bullet?.Draw();
+            _ship?.Draw();
+            if (_ship != null)
+                Buffer.Graphics.DrawString( "Energy:" + _ship.Energy, SystemFonts.DefaultFont, Brushes.White, 0, 0 );
             Buffer.Render();
         }
 
@@ -112,19 +147,29 @@ namespace Asteroids
         /// </summary>
         public static void Update()
         {
-            foreach (BaseObject obj in _objs)
-            {
-                obj.Update();
+            foreach (BaseObject obj in _objs) obj.Update();
 
-                if (obj is Asteroid)
+            _bullet?.Update();
+
+            for (var i = 0; i < _asteroids.Length; i++)
+            {
+                if (_asteroids[i] == null) continue;
+                _asteroids[i].Update();
+                if (_bullet != null && _bullet.Collision( _asteroids[i] ))
                 {
-                    if (obj.Collision( _bullet ))
-                    {
-                        System.Media.SystemSounds.Hand.Play();
-                        _bullet.Reset();
-                        obj.Reset();
-                    }
+                    System.Media.SystemSounds.Hand.Play();
+                    _asteroids[i] = null;
+                    _bullet = null;
+                    continue;
                 }
+                if (!_ship.Collision( _asteroids[i] )) continue;
+
+                var rnd = new Random();
+
+                _ship?.EnergyLow( rnd.Next( 1, 10 ) );
+                System.Media.SystemSounds.Asterisk.Play();
+                if (_ship.Energy <= 0) _ship?.Die();
+
             }
         }
 
@@ -133,34 +178,45 @@ namespace Asteroids
         /// </summary>
         public static void Load()
         {
-            _objs = new BaseObject[40];
 
-            //пуля
-            _bullet = new Bullet( new Point( 0, 200 ), new Point( 5, 0 ), new Size( 4, 1 ) );
-            _objs[0] = _bullet;
+            _asteroids = new Asteroid[8];
+
+            _objs = new BaseObject[30];
 
             //летающая тарелка
-            //запускем сначала ее, чтобы астероиды все двигались
-            _objs[1] = new Ufo( new Point( 600, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ) );
+            _objs[0] = new Ufo( new Point( 600, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ) );
 
             //астероиды
-            for (int i = 2; i <= 6; i++)
+            for (int i = 0; i < _asteroids.Length; i++)
             {
                 int r = rand.Next( 5, 50 );
-                _objs[i] = new Asteroid( new Point( 600, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ) );
-            }
-
-            //звезды
-            for (int i = 7; i <= 15; i++)
-            {
-                _objs[i] = new Star( new Point( 600,  rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ) );
+                _asteroids[i] = new Asteroid( new Point( 600, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ) );
             }
 
             //звездная пыль
-            for (int i = 16; i < _objs.Length; i++)
+            for (int i = 0; i <= 19; i++)
             {
                 _objs[i] = new StarDust( new Point( 600, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ) );
             }
+
+            //звезды
+            for (int i = 20; i < _objs.Length; i++)
+            {
+                _objs[i] = new Star( new Point( 600, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ) );
+            }
+
+            //Корабль
+            _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ) );
+        }
+
+        /// <summary>
+        /// конец игры
+        /// </summary>
+        public static void Finish()
+        {
+            _timer.Stop();
+            Buffer.Graphics.DrawString( "The End", new Font( FontFamily.GenericSansSerif, 60, FontStyle.Underline ), Brushes.White, 200, 100 );
+            Buffer.Render();
         }
     }
 }
