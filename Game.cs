@@ -155,19 +155,28 @@ namespace Asteroids
             {
                 if (_asteroids[i] == null) continue;
                 _asteroids[i].Update();
+                if (_asteroids[i].IsBlow)
+                {
+                    _asteroids[i] = null;
+                    continue;
+                }
                 if (_bullet != null && _bullet.Collision( _asteroids[i] ))
                 {
                     System.Media.SystemSounds.Hand.Play();
-                    _asteroids[i] = null;
                     _bullet = null;
+                    _asteroids[i].StartBlow();
+
                     continue;
                 }
                 if (!_ship.Collision( _asteroids[i] )) continue;
 
                 var rnd = new Random();
 
-                _ship?.EnergyLow( rnd.Next( 1, 10 ) );
-                System.Media.SystemSounds.Asterisk.Play();
+                if (!( _asteroids[i].IsBlow ))
+                {
+                    _ship?.EnergyLow( rnd.Next( 1, 10 ) );
+                    System.Media.SystemSounds.Asterisk.Play();
+                }
                 if (_ship.Energy <= 0) _ship?.Die();
 
             }
@@ -191,6 +200,7 @@ namespace Asteroids
             {
                 int r = rand.Next( 5, 50 );
                 _asteroids[i] = new Asteroid( new Point( 600, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ) );
+                _asteroids[i].eventAstBlow += Game_eventAstBlow;
             }
 
             //звездная пыль
@@ -207,6 +217,11 @@ namespace Asteroids
 
             //Корабль
             _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ) );
+        }
+
+        private static void Game_eventAstBlow( object sender, EventArgs e )
+        {
+            //sender = null;
         }
 
         /// <summary>
