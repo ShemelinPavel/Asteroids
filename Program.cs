@@ -12,25 +12,20 @@ namespace Asteroids
         static void Main()
         {
             Form form = new Form();
-            form.Width = 1800;
+            form.Width = 800;
             form.Height = 600;
 
             try
             {
                 Game.Init( form );
+                form.Show();
+                Game.Draw();
+                Application.Run( form );
             }
-            catch(ArgumentOutOfRangeException e)
+            catch (ArgumentOutOfRangeException e)
             {
                 MessageBox.Show( $"Ошибка запуска игры: {e.Message}" );
-                MessageBox.Show( "Запуск в стандартном разрешении... " );
-                form.Width = 800;
-                form.Height = 600;
-                Game.Init( form );
             }
-
-            form.Show();
-            Game.Draw();
-            Application.Run( form );
         }
     }
 }
