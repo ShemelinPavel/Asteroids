@@ -5,6 +5,11 @@ using System.Reflection;
 namespace Asteroids
 {
     /// <summary>
+    /// делегат для взимподействия
+    /// </summary>
+    public delegate void Message();
+
+    /// <summary>
     /// столкновение
     /// </summary>
     interface ICollision
@@ -70,7 +75,7 @@ namespace Asteroids
         public abstract void Reset();
 
         /// <summary>
-        /// реализация ICollision
+        /// столкновение - реализация ICollision
         /// </summary>
         /// <param name="o">второй объект столкновения</param>
         /// <returns>координаты пересеклись</returns>
@@ -332,7 +337,7 @@ namespace Asteroids
         /// </summary>
         public override void Update()
         {
-            Pos.X = Pos.X + 3;
+            Pos.X = Pos.X + 6;
             if (Pos.X > Game.Width) this.Reset();
         }
 
@@ -345,5 +350,77 @@ namespace Asteroids
             int r = rand.Next( 0, Game.Height );
             this.Pos = new Point( 0, r );
         }
+    }
+
+    /// <summary>
+    /// Корабль - объект управления игрока
+    /// </summary>
+    class Ship : BaseObject
+    {
+        /// <summary>
+        /// картинка
+        /// </summary>
+        private static Image image;
+
+        private int _energy = 100;
+        /// <summary>
+        /// жизнь 
+        /// </summary>
+        public int Energy => _energy;
+
+        static Ship()
+        {
+            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Ship.png" ) );
+        }
+        
+        /// <summary>
+        /// уменьшение жизни объекта Корабль
+        /// </summary>
+        /// <param name="n">размер уменьшения</param>
+        public void EnergyLow( int n )
+        {
+            _energy -= n;
+        }
+        public Ship( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        {
+        }
+        public override void Draw()
+        {
+            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
+        }
+        public override void Update()
+        {
+        }
+        public void Up()
+        {
+            if (Pos.Y > 0) Pos.Y = Pos.Y - Dir.Y;
+        }
+        public void Down()
+        {
+            if (Pos.Y < Game.Height) Pos.Y = Pos.Y + Dir.Y;
+        }
+
+        /// <summary>
+        /// перенос объекта в начало экрана в случайную позицию по высоте
+        /// </summary>
+        public override void Reset()
+        {
+            Random rand = new Random( 0 );
+            int r = rand.Next( 0, Game.Height );
+            this.Pos = new Point( 0, r );
+        }
+
+        /// <summary>
+        /// гибель объекта Корабль
+        /// </summary>
+        public void Die()
+        {
+            MessageDie?.Invoke();
+        }
+
+        /// <summary>
+        /// событие гибели объекта Корабль
+        /// </summary>
+        public static event Message MessageDie;
     }
 }
