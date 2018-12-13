@@ -5,9 +5,29 @@ using System.Reflection;
 namespace Asteroids
 {
     /// <summary>
-    /// делегат для взимподействия
+    /// данные событий игры
     /// </summary>
-    public delegate void Message();
+    public class GameEventArgs : EventArgs
+    {
+        /// <summary>
+        /// сообщение подписчику события
+        /// </summary>
+        private string message;
+
+        /// <summary>
+        /// сообщение подписчику события
+        /// </summary>
+        public string Message => message;
+
+        /// <summary>
+        /// сообщение подписчику события
+        /// </summary>
+        /// <param name="s">тест сообщения</param>
+        public GameEventArgs( string s )
+        {
+            this.message = s;
+        }
+    }
 
     /// <summary>
     /// столкновение
@@ -23,11 +43,14 @@ namespace Asteroids
         Rectangle Rect { get; }
     }
 
+    #region BaseObject
     /// <summary>
     /// бзовый класс для отрисовки фугур
     /// </summary>
     abstract class BaseObject : ICollision
     {
+        public event EventHandler<GameEventArgs> EventObjectCollision;
+
         /// <summary>
         /// позиция объекта
         /// </summary>
@@ -70,18 +93,28 @@ namespace Asteroids
         public abstract void Update();
 
         /// <summary>
-        /// обработка событий покидания пределов экрана и столкновений
-        /// </summary>
-        public abstract void Reset();
-
-        /// <summary>
         /// столкновение - реализация ICollision
         /// </summary>
         /// <param name="o">второй объект столкновения</param>
         /// <returns>координаты пересеклись</returns>
-        public bool Collision( ICollision o ) => o.Rect.IntersectsWith( this.Rect );
-    }
+        public bool Collision( ICollision o )
+        {
+            bool _collision = o.Rect.IntersectsWith( this.Rect );
 
+            if (_collision)
+            {
+                //регистрируем все события столкновений кроме Астероидов уже ударившихся о Корабль
+                if (!( o is Asteroid && ( (Asteroid)o ).Power == 0 ))
+                {
+                    EventObjectCollision?.Invoke( this, new GameEventArgs( $"Объект: {this.ToString()} столкнулся с объектом: {o.ToString()}" ) );
+                }
+            }
+            return _collision;
+        }
+    }
+    #endregion BaseObject
+
+    #region Star
     /// <summary>
     /// Звезда - объект для формирования фона
     /// </summary>
@@ -128,11 +161,21 @@ namespace Asteroids
         /// <summary>
         /// обработка покидания границ экрана
         /// </summary>
-        public override void Reset()
+        private void Reset()
         {
             this.Pos.X = Game.Width + Size.Width;
         }
+
+        /// <summary>
+        /// переопределение представления объекта Звезда
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return "Звезда";
+        }
     }
+    #endregion Star
 
     #region Asteroid
     /// <summary>
@@ -143,7 +186,7 @@ namespace Asteroids
         /// <summary>
         /// событие - взрыв объекта Астероид
         /// </summary>
-        public event EventHandler eventAstBlow;
+        public event EventHandler<GameEventArgs> EventAstBlow;
 
         /// <summary>
         /// коллекция картинок
@@ -163,14 +206,6 @@ namespace Asteroids
         /// счетчик кадров взрыва
         /// </summary>
         private ushort blowCounter;
-        /// <summary>
-        /// счетчик кадров взрыва
-        /// </summary>
-        public ushort BlowCounter
-        {
-            get { return blowCounter; }
-            set { blowCounter = value; }
-        }
 
         public int Power { get; set; }
 
@@ -207,8 +242,8 @@ namespace Asteroids
         public Asteroid( Point pos, Point dir, Size size ) : base( pos, dir, size )
         {
             image = imageColl[rand.Next( 0, 2 )];
-            Power = 1;
-            BlowCounter = 0;
+            Power = rand.Next( 1, 11 );
+            blowCounter = 0;
         }
 
         /// <summary>
@@ -262,36 +297,40 @@ namespace Asteroids
         }
 
         /// <summary>
-        /// обработка столкновения с объектом Bullet
-        /// </summary>
-        public override void Reset()
-        {
-            Random rand = new Random( 0 );
-            int r = rand.Next( 0, Game.Height );
-            this.Pos = new Point( Game.Width, r );
-        }
-
-        /// <summary>
-        /// Окончание взрыва
+        /// Окончание взрыва объекта Астероид
         /// </summary>
         private void Blow()
         {
             this.isBlow = true;
 
-            EventHandler handler = eventAstBlow;
-            if (handler != null)
-            {
-                EventArgs e = new EventArgs();
-                handler( this, e );
-            }
+            EventAstBlow?.Invoke( this, new GameEventArgs( $"Объект: {this.ToString()} взорвался" ) );
         }
-        
+
         /// <summary>
-        /// Начало взрыва
+        /// Начало взрыва объекта Астероид
         /// </summary>
         public void StartBlow()
         {
-            BlowCounter++;
+            this.blowCounter++;
+            this.Power = 0;
+        }
+
+        /// <summary>
+        /// переопределение представления объекта Астероид
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            string colour = "";
+            if (this.image == Asteroid.imageColl.GetValue( 0 ))
+            {
+                colour = "Красный";
+            }
+            else if (this.image == Asteroid.imageColl.GetValue( 1 ))
+            {
+                colour = "Синий";
+            }
+            return ( colour == "" ) ? "Астероид" : colour + " астероид";
         }
     }
     #endregion Asteroid
@@ -348,10 +387,19 @@ namespace Asteroids
         }
 
         //обработка покидания границ экрана
-        public override void Reset()
+        private void Reset()
         {
             Pos.X = 0;
             Pos.Y = rand.Next( Game.Height );
+        }
+
+        /// <summary>
+        /// переопределение представления объекта Летающая тарелка
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return "Летающая тарелка";
         }
     }
     #endregion Ufo
@@ -393,9 +441,18 @@ namespace Asteroids
         /// <summary>
         /// обработка покидания границ экрана
         /// </summary>
-        public override void Reset()
+        private void Reset()
         {
             this.Pos.X = Game.Width + Size.Width;
+        }
+
+        /// <summary>
+        /// переопределение представления объекта Звездная пыль
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return "Звездная пыль";
         }
     }
     #endregion StarDust
@@ -406,6 +463,13 @@ namespace Asteroids
     /// </summary>
     class Bullet : BaseObject
     {
+        public event EventHandler<GameEventArgs> EventBulletShot;
+
+        /// <summary>
+        /// флаг - был выстрел (вызывалось событие) или нет
+        /// </summary>
+        private bool wasEventShot;
+
         /// <summary>
         /// конструктор объекта Пуля
         /// </summary>
@@ -421,6 +485,12 @@ namespace Asteroids
         /// </summary>
         public override void Draw()
         {
+            if (!( wasEventShot ))
+            {
+                EventBulletShot?.Invoke( this, new GameEventArgs( "Выстрел" ) );
+                this.wasEventShot = true;
+            }
+
             Game.Buffer.Graphics.DrawRectangle( Pens.OrangeRed, Pos.X, Pos.Y, Size.Width, Size.Height );
         }
 
@@ -436,11 +506,20 @@ namespace Asteroids
         /// <summary>
         /// перенос объекта в начало экрана в случайную позицию по высоте
         /// </summary>
-        public override void Reset()
+        private void Reset()
         {
             Random rand = new Random( 0 );
             int r = rand.Next( 0, Game.Height );
             this.Pos = new Point( 0, r );
+        }
+
+        /// <summary>
+        /// переопределение представления объекта Пуля
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return "Пуля";
         }
     }
     #endregion Bullet
@@ -451,6 +530,16 @@ namespace Asteroids
     /// </summary>
     class Ship : BaseObject
     {
+        /// <summary>
+        /// событие гибели объекта Корабль
+        /// </summary>
+        public static event EventHandler<GameEventArgs> EventShipDie;
+
+        /// <summary>
+        /// событие повреждения/лечения объекта Корабль
+        /// </summary>
+        public static event EventHandler<GameEventArgs> EventShipEnergyChange;
+
         /// <summary>
         /// картинка
         /// </summary>
@@ -473,49 +562,150 @@ namespace Asteroids
         /// <param name="n">размер уменьшения</param>
         public void EnergyLow( int n )
         {
-            _energy -= n;
+            if (n != 0)
+            {
+                _energy -= n;
+                EventShipEnergyChange?.Invoke( this, new GameEventArgs( $"Объект: {this.ToString()} поврежден на {n}" ) );
+            }
         }
+
+        /// <summary>
+        /// увеличение жизни объекта Корабль
+        /// </summary>
+        /// <param name="n">размер увеличения</param>
+        public void EnergyHigh( int n )
+        {
+            if (n != 0)
+            {
+                _energy = ( _energy + n > 100) ? 100: _energy + n;
+                EventShipEnergyChange?.Invoke( this, new GameEventArgs( $"Объект: {this.ToString()} восстановлен на {n}" ) );
+            }
+        }
+
+        /// <summary>
+        /// конструктор объекта Корабль
+        /// </summary>
+        /// <param name="pos">позиция объекта</param>
+        /// <param name="dir">направление и скорость смещения объекта</param>
+        /// <param name="size">размер объекта</param>
         public Ship( Point pos, Point dir, Size size ) : base( pos, dir, size )
         {
         }
+
+        /// <summary>
+        /// отрисовка объекта Корабль
+        /// </summary>
         public override void Draw()
         {
             Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
         }
+
+        /// <summary>
+        /// вычисление новых координат объекта Корабль
+        /// </summary>
         public override void Update()
         {
         }
+
+        /// <summary>
+        /// смещение вверх по экрану объекта Корабль
+        /// </summary>
         public void Up()
         {
             if (Pos.Y > 0) Pos.Y = Pos.Y - Dir.Y;
         }
+
+        /// <summary>
+        /// смещение вниз по экрану объекта Корабль
+        /// </summary>
         public void Down()
         {
             if (Pos.Y < Game.Height) Pos.Y = Pos.Y + Dir.Y;
         }
 
         /// <summary>
-        /// перенос объекта в начало экрана в случайную позицию по высоте
-        /// </summary>
-        public override void Reset()
-        {
-            Random rand = new Random( 0 );
-            int r = rand.Next( 0, Game.Height );
-            this.Pos = new Point( 0, r );
-        }
-
-        /// <summary>
-        /// гибель объекта Корабль
+        /// смерть объекта Корабль
         /// </summary>
         public void Die()
         {
-            MessageDie?.Invoke();
+            EventShipDie?.Invoke( this, new GameEventArgs( $"Объект {this.ToString()} уничтожен" ) );
         }
 
         /// <summary>
-        /// событие гибели объекта Корабль
+        /// переопределение представления объекта Корабль
         /// </summary>
-        public static event Message MessageDie;
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return $"Корабль. Состояние: {this.Energy}";
+        }
     }
     #endregion Ship
+
+    #region AidKit
+    /// <summary>
+    /// Аптечка - объект-восстановления энергии
+    /// </summary>
+    class AidKit : BaseObject
+    {
+        /// <summary>
+        /// Количество энерги восстановления
+        /// </summary>
+        public int Power { get; set; }
+
+        /// <summary>
+        /// картинка
+        /// </summary>
+        private static Image image;
+
+        /// <summary>
+        /// статический конструктор - инициализация картинки и рандомайзера
+        /// </summary>
+        static AidKit()
+        {
+            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.AidKit.png" ) );
+        }
+
+        /// <summary>
+        /// конструктор объекта Аптечка
+        /// </summary>
+        /// <param name="pos">позиция объекта</param>
+        /// <param name="dir">направление и скорость смещения объекта</param>
+        /// <param name="size">размер объекта</param>
+        public AidKit( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        {
+            Power = 20;
+        }
+
+        /// <summary>
+        /// отрисовка объекта Аптечка
+        /// </summary>
+        public override void Draw()
+        {
+            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
+        }
+
+        /// <summary>
+        /// вычисление новых координат объекта Аптечка
+        /// </summary>
+        public override void Update()
+        {
+            Pos.X = Pos.X + Dir.X;
+            Pos.Y = Pos.Y + Dir.Y;
+            if (Pos.X < 0) Dir.X = -Dir.X;
+            if (Pos.X > Game.Width) Dir.X = -Dir.X;
+            if (Pos.Y < 0) Dir.Y = -Dir.Y;
+            if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+        }
+
+        /// <summary>
+        /// переопределение представления объекта Аптечка
+        /// </summary>
+        /// <returns>Текстовое представление объекта</returns>
+        public override string ToString()
+        {
+            return "Аптечка";
+        }
+    }
+    #endregion AidKit
 }
