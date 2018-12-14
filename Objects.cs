@@ -5,6 +5,75 @@ using System.Reflection;
 namespace Asteroids
 {
     /// <summary>
+    /// менеджер скинов для объектов игры
+    /// </summary>
+    public static class ObjectSkinManager
+    {
+        /// <summary>
+        /// рандомайзер
+        /// </summary>
+        private static Random rand;
+
+        /// <summary>
+        /// Конструктор менеджера скинов для объектов игры
+        /// </summary>
+        static ObjectSkinManager()
+        {
+            rand = new Random( 0 );
+        }
+
+        /// <summary>
+        /// возвращает коллекцию картинок в зависимости от типа объекта
+        /// </summary>
+        /// <param name="type">тип объекта</param>
+        /// <returns>коллекция картинок</returns>
+        public static Image[] GetImages( Type type )
+        {
+
+            if (type == typeof( Star ))
+            {
+                return new Image[]
+                {
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Star.png" ))
+                };
+            }
+            else if (type == typeof( Asteroid ))
+            {
+                int r = rand.Next( 0, 2 );
+                return new Image[]
+                {
+                    new Bitmap( (r == 0) ? Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid1.png" ) : Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid2.png" )),
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow0.png" )),
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow1.png" )),
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow2.png" ))
+                };
+            }
+            else if (type == typeof( Ufo ))
+            {
+                return new Image[]
+                {
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.UFO.png" ))
+                };
+            }
+            else if (type == typeof( Ship ))
+            {
+                return new Image[]
+                {
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Ship.png" ))
+                };
+            }
+            else if (type == typeof( AidKit ))
+            {
+                return new Image[]
+                {
+                    new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.AidKit.png" ))
+                };
+            }
+            else return new Image[1];
+        }
+    }
+
+    /// <summary>
     /// данные событий игры
     /// </summary>
     public class GameEventArgs : EventArgs
@@ -43,12 +112,14 @@ namespace Asteroids
         Rectangle Rect { get; }
     }
 
-    #region BaseObject
     /// <summary>
     /// бзовый класс для отрисовки фугур
     /// </summary>
     abstract class BaseObject : ICollision
     {
+        /// <summary>
+        /// событие столкновения объекта с другим объектом
+        /// </summary>
         public event EventHandler<GameEventArgs> EventObjectCollision;
 
         /// <summary>
@@ -63,6 +134,19 @@ namespace Asteroids
         /// размер объекта
         /// </summary>
         protected Size Size;
+        /// <summary>
+        /// коллекция скинов объекта
+        /// </summary>
+        protected Image[] ImageColl;
+        /// <summary>
+        /// максимальная ширина экрана
+        /// </summary>
+        protected int MaxWidth;
+        /// <summary>
+        /// максимальная высота экрана
+        /// </summary>
+        protected int MaxHeight;
+
 
         /// <summary>
         /// прямоугольник по размеру текущего объекта
@@ -75,17 +159,27 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">скорость и направление смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        protected BaseObject( Point pos, Point dir, Size size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxWidth">макс. ширина экрана игры</param>
+        /// <param name="maxHeight">макс. высота экрана игры</param>
+        protected BaseObject( Point pos, Point dir, Size size, Image[] images, int maxWidth, int maxHeight )
         {
             Pos = pos;
             Dir = dir;
             Size = size;
+            ImageColl = images;
+            MaxWidth = maxWidth;
+            MaxHeight = maxHeight;
         }
+
 
         /// <summary>
         /// отрисовка объекта
         /// </summary>
-        public abstract void Draw();
+        public virtual void Draw()
+        {
+            if (this.ImageColl[0] != null) Game.Buffer.Graphics.DrawImage( this.ImageColl[0], new Rectangle( this.Pos, this.Size ) );
+        }
 
         /// <summary>
         /// вычисление новых координат объекта
@@ -112,42 +206,22 @@ namespace Asteroids
             return _collision;
         }
     }
-    #endregion BaseObject
 
-    #region Star
     /// <summary>
     /// Звезда - объект для формирования фона
     /// </summary>
     class Star : BaseObject
     {
         /// <summary>
-        /// картинка
-        /// </summary>
-        private static Image image;
-
-        /// <summary>
-        /// статический конструктор - инициализация картинки
-        /// </summary>
-        static Star()
-        {
-            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Star.png" ) );
-        }
-
-        /// <summary>
         /// конструктор объекта Звезда
         /// </summary>
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Star( Point pos, Point dir, Size size ) : base( pos, dir, size ) { }
-
-        /// <summary>
-        /// отрисовка объекта Звезда
-        /// </summary>
-        public override void Draw()
-        {
-            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
-        }
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public Star( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh ) { }
 
         /// <summary>
         /// вычисление новых координат объекта Звезда
@@ -161,9 +235,9 @@ namespace Asteroids
         /// <summary>
         /// обработка покидания границ экрана
         /// </summary>
-        private void Reset()
+        public void Reset()
         {
-            this.Pos.X = Game.Width + Size.Width;
+            this.Pos.X = this.MaxWidth + Size.Width;
         }
 
         /// <summary>
@@ -175,7 +249,6 @@ namespace Asteroids
             return "Звезда";
         }
     }
-    #endregion Star
 
     #region Asteroid
     /// <summary>
@@ -189,23 +262,22 @@ namespace Asteroids
         public event EventHandler<GameEventArgs> EventAstBlow;
 
         /// <summary>
-        /// коллекция картинок
-        /// </summary>
-        static private Image[] imageColl;
-        /// <summary>
         /// рандомайзер
         /// </summary>
         static private Random rand;
 
         /// <summary>
-        /// картинка
-        /// </summary>
-        private Image image;
-
-        /// <summary>
         /// счетчик кадров взрыва
         /// </summary>
         private ushort blowCounter;
+        /// <summary>
+        /// счетчик кадров взрыва
+        /// </summary>
+        public ushort BlowCounter
+        {
+            get { return blowCounter; }
+            set { blowCounter = value; }
+        }
 
         public int Power { get; set; }
 
@@ -223,13 +295,6 @@ namespace Asteroids
         /// </summary>
         static Asteroid()
         {
-            imageColl = new Image[5];
-            imageColl[0] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid1.png" ) );
-            imageColl[1] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Asteroid2.png" ) );
-            imageColl[2] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow0.png" ) );
-            imageColl[3] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow1.png" ) );
-            imageColl[4] = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Blow2.png" ) );
-
             rand = new Random( 0 );
         }
 
@@ -239,9 +304,11 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Asteroid( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public Asteroid( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
-            image = imageColl[rand.Next( 0, 2 )];
             Power = rand.Next( 1, 11 );
             blowCounter = 0;
         }
@@ -253,19 +320,19 @@ namespace Asteroids
         {
             if (blowCounter == 1)
             {
-                Game.Buffer.Graphics.DrawImage( imageColl[2], new Rectangle( this.Pos, this.Size ) );
+                if (this.ImageColl[1] != null) Game.Buffer.Graphics.DrawImage( this.ImageColl[1], new Rectangle( this.Pos, this.Size ) );
             }
             else if (blowCounter == 2)
             {
-                Game.Buffer.Graphics.DrawImage( imageColl[3], new Rectangle( this.Pos, this.Size ) );
+                if (this.ImageColl[2] != null) Game.Buffer.Graphics.DrawImage( this.ImageColl[2], new Rectangle( this.Pos, this.Size ) );
             }
             else if (blowCounter == 3)
             {
-                Game.Buffer.Graphics.DrawImage( imageColl[4], new Rectangle( this.Pos, this.Size ) );
+                if (this.ImageColl[3] != null) Game.Buffer.Graphics.DrawImage( this.ImageColl[3], new Rectangle( this.Pos, this.Size ) );
             }
             else
             {
-                Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
+                if (this.ImageColl[0] != null) Game.Buffer.Graphics.DrawImage( this.ImageColl[0], new Rectangle( this.Pos, this.Size ) );
             }
         }
 
@@ -281,9 +348,9 @@ namespace Asteroids
                     Pos.X = Pos.X + Dir.X;
                     Pos.Y = Pos.Y + Dir.Y;
                     if (Pos.X < 0) Dir.X = -Dir.X;
-                    if (Pos.X > Game.Width) Dir.X = -Dir.X;
+                    if (Pos.X > this.MaxWidth) Dir.X = -Dir.X;
                     if (Pos.Y < 0) Dir.Y = -Dir.Y;
-                    if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+                    if (Pos.Y > this.MaxHeight) Dir.Y = -Dir.Y;
                 }
                 else if (blowCounter == 3)
                 {
@@ -321,16 +388,7 @@ namespace Asteroids
         /// <returns>Текстовое представление объекта</returns>
         public override string ToString()
         {
-            string colour = "";
-            if (this.image == Asteroid.imageColl.GetValue( 0 ))
-            {
-                colour = "Красный";
-            }
-            else if (this.image == Asteroid.imageColl.GetValue( 1 ))
-            {
-                colour = "Синий";
-            }
-            return ( colour == "" ) ? "Астероид" : colour + " астероид";
+            return "Астероид";
         }
     }
     #endregion Asteroid
@@ -342,10 +400,6 @@ namespace Asteroids
     class Ufo : BaseObject
     {
         /// <summary>
-        /// картинка
-        /// </summary>
-        private static Image image;
-        /// <summary>
         /// рандомайзер
         /// </summary>
         private static Random rand;
@@ -355,7 +409,6 @@ namespace Asteroids
         /// </summary>
         static Ufo()
         {
-            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.UFO.png" ) );
             rand = new Random( 0 );
         }
 
@@ -365,16 +418,11 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Ufo( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public Ufo( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
-        }
-
-        /// <summary>
-        /// отрисовка объекта Летающая тарелка
-        /// </summary>
-        public override void Draw()
-        {
-            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
         }
 
         /// <summary>
@@ -383,14 +431,14 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X - Dir.X;
-            if (Pos.X > Game.Width) this.Reset();
+            if (Pos.X > this.MaxWidth) this.Reset();
         }
 
         //обработка покидания границ экрана
-        private void Reset()
+        public void Reset()
         {
             Pos.X = 0;
-            Pos.Y = rand.Next( Game.Height );
+            Pos.Y = rand.Next( this.MaxHeight );
         }
 
         /// <summary>
@@ -416,7 +464,10 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public StarDust( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public StarDust( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
         }
 
@@ -441,9 +492,9 @@ namespace Asteroids
         /// <summary>
         /// обработка покидания границ экрана
         /// </summary>
-        private void Reset()
+        public void Reset()
         {
-            this.Pos.X = Game.Width + Size.Width;
+            this.Pos.X = this.MaxWidth + Size.Width;
         }
 
         /// <summary>
@@ -476,7 +527,10 @@ namespace Asteroids
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Bullet( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public Bullet( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
         }
 
@@ -500,16 +554,16 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X + 6;
-            if (Pos.X > Game.Width) this.Reset();
+            if (Pos.X > this.MaxWidth) this.Reset();
         }
 
         /// <summary>
         /// перенос объекта в начало экрана в случайную позицию по высоте
         /// </summary>
-        private void Reset()
+        public void Reset()
         {
             Random rand = new Random( 0 );
-            int r = rand.Next( 0, Game.Height );
+            int r = rand.Next( 0, this.MaxHeight );
             this.Pos = new Point( 0, r );
         }
 
@@ -540,21 +594,11 @@ namespace Asteroids
         /// </summary>
         public static event EventHandler<GameEventArgs> EventShipEnergyChange;
 
-        /// <summary>
-        /// картинка
-        /// </summary>
-        private static Image image;
-
         private int _energy = 100;
         /// <summary>
         /// жизнь 
         /// </summary>
         public int Energy => _energy;
-
-        static Ship()
-        {
-            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.Ship.png" ) );
-        }
 
         /// <summary>
         /// уменьшение жизни объекта Корабль
@@ -577,27 +621,21 @@ namespace Asteroids
         {
             if (n != 0)
             {
-                _energy = ( _energy + n > 100) ? 100: _energy + n;
+                _energy = ( _energy + n > 100 ) ? 100 : _energy + n;
                 EventShipEnergyChange?.Invoke( this, new GameEventArgs( $"Объект: {this.ToString()} восстановлен на {n}" ) );
             }
         }
-
         /// <summary>
         /// конструктор объекта Корабль
         /// </summary>
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public Ship( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public Ship( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
-        }
-
-        /// <summary>
-        /// отрисовка объекта Корабль
-        /// </summary>
-        public override void Draw()
-        {
-            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
         }
 
         /// <summary>
@@ -620,7 +658,7 @@ namespace Asteroids
         /// </summary>
         public void Down()
         {
-            if (Pos.Y < Game.Height) Pos.Y = Pos.Y + Dir.Y;
+            if (Pos.Y < this.MaxHeight) Pos.Y = Pos.Y + Dir.Y;
         }
 
         /// <summary>
@@ -654,48 +692,30 @@ namespace Asteroids
         public int Power { get; set; }
 
         /// <summary>
-        /// картинка
-        /// </summary>
-        private static Image image;
-
-        /// <summary>
-        /// статический конструктор - инициализация картинки и рандомайзера
-        /// </summary>
-        static AidKit()
-        {
-            image = new Bitmap( Assembly.GetEntryAssembly().GetManifestResourceStream( "Asteroids.Resources.AidKit.png" ) );
-        }
-
-        /// <summary>
         /// конструктор объекта Аптечка
         /// </summary>
         /// <param name="pos">позиция объекта</param>
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
-        public AidKit( Point pos, Point dir, Size size ) : base( pos, dir, size )
+        /// <param name="images">коллекция скинов объекта</param>
+        /// <param name="maxw">макс. ширина экрана игры</param>
+        /// <param name="maxh">макс. высота экрана игры</param>
+        public AidKit( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
         {
             Power = 20;
         }
 
         /// <summary>
-        /// отрисовка объекта Аптечка
-        /// </summary>
-        public override void Draw()
-        {
-            Game.Buffer.Graphics.DrawImage( image, new Rectangle( this.Pos, this.Size ) );
-        }
-
-        /// <summary>
-        /// вычисление новых координат объекта Аптечка
+        /// вычисление новых координат объекта Астероид
         /// </summary>
         public override void Update()
         {
             Pos.X = Pos.X + Dir.X;
             Pos.Y = Pos.Y + Dir.Y;
             if (Pos.X < 0) Dir.X = -Dir.X;
-            if (Pos.X > Game.Width) Dir.X = -Dir.X;
+            if (Pos.X > this.MaxWidth) Dir.X = -Dir.X;
             if (Pos.Y < 0) Dir.Y = -Dir.Y;
-            if (Pos.Y > Game.Height) Dir.Y = -Dir.Y;
+            if (Pos.Y > this.MaxHeight) Dir.Y = -Dir.Y;
         }
 
         /// <summary>
