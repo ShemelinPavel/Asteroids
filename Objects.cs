@@ -558,13 +558,11 @@ namespace Asteroids
         }
 
         /// <summary>
-        /// перенос объекта в начало экрана в случайную позицию по высоте
+        /// перенос объекта в начало экрана
         /// </summary>
         public void Reset()
         {
-            Random rand = new Random( 0 );
-            int r = rand.Next( 0, this.MaxHeight );
-            this.Pos = new Point( 0, r );
+            this.Pos = new Point( 0, this.Pos.Y );
         }
 
         /// <summary>
