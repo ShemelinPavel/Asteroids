@@ -4,6 +4,21 @@ using System.Drawing;
 namespace Asteroids
 {
     /// <summary>
+    /// Логирование событий игры
+    /// </summary>
+    public static class GameLog
+    {
+        /// <summary>
+        /// Вывод сообщения в консоль
+        /// </summary>
+        /// <param name="s">Текст сообщения</param>
+        public static void Write( string s )
+        {
+            Console.WriteLine( s );
+        }
+    }
+
+    /// <summary>
     /// основной класс игры
     /// </summary>
     static class Game
@@ -124,7 +139,7 @@ namespace Asteroids
         {
             if (e.KeyCode == Keys.ControlKey)
             {
-                _bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ) );
+                _bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ), ObjectSkinManager.GetImages( typeof( Bullet ) ), Game.Width,  Game.Height);
                 _bullet.EventBulletShot += _bullet_EventBulletShot;
                 _bullet.EventObjectCollision += _bullet_EventObjectCollision;
             }
@@ -197,12 +212,12 @@ namespace Asteroids
             int asteroidsNullCounter = 0;
             for (var i = 0; i < _asteroids.Length; i++)
             {
-                
+
 
                 if (_asteroids[i] == null)
                 {
                     asteroidsNullCounter++;
-                    if(asteroidsNullCounter == _asteroids.Length)
+                    if (asteroidsNullCounter == _asteroids.Length)
                     {
                         Finish();
                     }
@@ -250,13 +265,13 @@ namespace Asteroids
             _objs = new BaseObject[30];
 
             //летающая тарелка
-            _objs[0] = new Ufo( new Point( 15, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ) );
+            _objs[0] = new Ufo( new Point( 15, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ), ObjectSkinManager.GetImages( typeof( Ufo ) ), Game.Width, Game.Height );
 
             //астероиды
             for (int i = 0; i < _asteroids.Length; i++)
             {
                 int r = rand.Next( 5, 50 );
-                _asteroids[i] = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ) );
+                _asteroids[i] = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), Game.Width, Game.Height );
                 _asteroids[i].EventAstBlow += Game_EventAstBlow;
             }
 
@@ -264,23 +279,23 @@ namespace Asteroids
             for (int i = 0; i < _aidkits.Length; i++)
             {
                 int r = rand.Next( 5, 50 );
-                _aidkits[i] = new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ) );
+                _aidkits[i] = new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ), ObjectSkinManager.GetImages( typeof( AidKit ) ), Game.Width, Game.Height );
             }
 
             //звездная пыль
             for (int i = 1; i <= 19; i++)
             {
-                _objs[i] = new StarDust( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ) );
+                _objs[i] = new StarDust( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ), ObjectSkinManager.GetImages( typeof( StarDust ) ), Game.Width, Game.Height );
             }
 
             //звезды
             for (int i = 20; i < _objs.Length; i++)
             {
-                _objs[i] = new Star( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ) );
+                _objs[i] = new Star( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ), ObjectSkinManager.GetImages( typeof( Star ) ), Game.Width, Game.Height );
             }
 
             //Корабль
-            _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ) );
+            _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ), ObjectSkinManager.GetImages( typeof( Ship ) ), Game.Width, Game.Height );
         }
 
         /// <summary>
@@ -343,7 +358,7 @@ namespace Asteroids
         {
             GameLog.Write( e.Message );
             Finish();
-         }
+        }
 
         /// <summary>
         /// Конец игры
