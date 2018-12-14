@@ -4,21 +4,6 @@ using System.Drawing;
 namespace Asteroids
 {
     /// <summary>
-    /// Логирование событий игры
-    /// </summary>
-    public static class GameLog
-    {
-        /// <summary>
-        /// Вывод сообщения в консоль
-        /// </summary>
-        /// <param name="s">Текст сообщения</param>
-        public static void Write( string s )
-        {
-            Console.WriteLine( s );
-        }
-    }
-
-    /// <summary>
     /// основной класс игры
     /// </summary>
     static class Game
