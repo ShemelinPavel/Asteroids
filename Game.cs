@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Collections.Generic;
+
 namespace Asteroids
 {
     /// <summary>
@@ -50,18 +52,17 @@ namespace Asteroids
         /// <summary>
         /// объект Пуля
         /// </summary>
-        private static Bullet _bullet;
+        private static List<Bullet> _bullets = new List<Bullet>();
 
         /// <summary>
         /// коллекция объектов Астероид
         /// </summary>
-        private static Asteroid[] _asteroids;
+        private static List<Asteroid> _asteroids = new List<Asteroid>();
 
         /// <summary>
         /// коллекция объектов Аптечка
         /// </summary>
-        private static AidKit[] _aidkits;
-
+        private static List<AidKit> _aidkits = new List<AidKit>();
 
         /// <summary>
         /// объект Корабль
@@ -79,12 +80,23 @@ namespace Asteroids
         private static int gameScore;
 
         /// <summary>
+        /// счетчик волн атак
+        /// </summary>
+        private static int gameWaveCounter;
+
+        /// <summary>
+        /// счетчик кадров надписи волн атак
+        /// </summary>
+        private static int gameWaveSpoilerCounter;
+
+        /// <summary>
         /// конструктор
         /// </summary>
         static Game()
         {
             rand = new Random( 0 );
             gameScore = 0;
+            gameWaveCounter = 1;
 
             GameLog.Write( $"Начата игра. Дата: {DateTime.Now}" );
         }
@@ -139,9 +151,11 @@ namespace Asteroids
         {
             if (e.KeyCode == Keys.ControlKey)
             {
-                _bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ), ObjectSkinManager.GetImages( typeof( Bullet ) ), Game.Width,  Game.Height);
-                _bullet.EventBulletShot += _bullet_EventBulletShot;
-                _bullet.EventObjectCollision += _bullet_EventObjectCollision;
+                Bullet bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ), ObjectSkinManager.GetImages( typeof( Bullet ) ), Game.Width, Game.Height );
+                bullet.EventBulletShot += _bullet_EventBulletShot;
+                bullet.EventObjectCollision += _bullet_EventObjectCollision;
+
+                _bullets.Add( bullet );
             }
             if (e.KeyCode == Keys.Up) _ship.Up();
             if (e.KeyCode == Keys.Down) _ship.Down();
@@ -177,7 +191,8 @@ namespace Asteroids
                 a?.Draw();
             }
 
-            _bullet?.Draw();
+            foreach (Bullet b in _bullets) b.Draw();
+
             _ship?.Draw();
             if (_ship != null)
             {
@@ -194,63 +209,98 @@ namespace Asteroids
         {
             foreach (BaseObject obj in _objs) obj.Update();
 
-            _bullet?.Update();
+            foreach (Bullet b in _bullets) b.Update();
 
-            for (var i = 0; i < _aidkits.Length; i++)
+            for (int i = _aidkits.Count - 1; i >= 0; i--)
             {
-                if (_aidkits[i] == null) continue;
-
                 _aidkits[i].Update();
-
-                if (!_ship.Collision( _aidkits[i] )) continue;
-                _ship?.EnergyHigh( _aidkits[i].Power );
-                _aidkits[i] = null;
-                System.Media.SystemSounds.Exclamation.Play();
-
+                if (_ship != null && _ship.Collision( _aidkits[i] ))
+                {
+                    _ship.EnergyHigh( _aidkits[i].Power );
+                    _aidkits.Remove( _aidkits[i] );
+                    System.Media.SystemSounds.Exclamation.Play();
+                }
             }
 
-            int asteroidsNullCounter = 0;
-            for (var i = 0; i < _asteroids.Length; i++)
+            if (_asteroids.Count == 0)
             {
-
-
-                if (_asteroids[i] == null)
-                {
-                    asteroidsNullCounter++;
-                    if (asteroidsNullCounter == _asteroids.Length)
-                    {
-                        Finish();
-                    }
-                    continue;
-                }
-                _asteroids[i].Update();
-
-                //астероид взорвался "до конца" - можно его удалять со сцены
-                if (_asteroids[i].IsBlow)
-                {
-                    _asteroids[i] = null;
-                    continue;
-                }
-
-                //Пуля попала в Астероид
-                if (_bullet != null && _bullet.Collision( _asteroids[i] ))
-                {
-                    System.Media.SystemSounds.Hand.Play();
-                    _bullet = null;
-                    _asteroids[i].StartBlow();
-
-                    continue;
-                }
-                if (!_ship.Collision( _asteroids[i] )) continue;
-
-                if (!( _asteroids[i].IsBlow ))
-                {
-                    _ship?.EnergyLow( _asteroids[i].Power );
-                    _asteroids[i].StartBlow();
-                    System.Media.SystemSounds.Asterisk.Play();
-                }
-                if (_ship.Energy <= 0) _ship?.Die();
+                NewWaveCreate();
             }
+            else
+            {
+                for (int i = _asteroids.Count - 1; i >= 0; i--)
+                {
+                    _asteroids[i].Update();
+
+                    for (int j = _bullets.Count - 1; j >= 0; j--)
+                    {
+                        //Пуля попала в Астероид
+                        if (_bullets[j].Collision( _asteroids[i] ))
+                        {
+                            _bullets.Remove( _bullets[j] );
+                            _asteroids[i].StartBlow();
+                            System.Media.SystemSounds.Hand.Play();
+                        }
+                    }
+
+                    //астероид взорвался "до конца" - можно его удалять со сцены
+                    if (_asteroids[i].IsBlow)
+                    {
+                        _asteroids.Remove( _asteroids[i] );
+                        continue;
+                    }
+                    else if (_ship != null && _ship.Collision( _asteroids[i] ))
+                    {
+                        _ship.EnergyLow( _asteroids[i].Power );
+                        _asteroids[i].StartBlow();
+                        System.Media.SystemSounds.Asterisk.Play();
+                    }
+                    if (_ship.Energy <= 0) _ship?.Die();
+                }
+            }
+
+            //int asteroidsNullCounter = 0;
+            //for (var i = 0; i < _asteroids.Length; i++)
+            //{
+
+
+            //    if (_asteroids[i] == null)
+            //    {
+            //        asteroidsNullCounter++;
+            //        if (asteroidsNullCounter == _asteroids.Length)
+            //        {
+            //            Finish();
+            //        }
+            //        continue;
+            //    }
+            //    _asteroids[i].Update();
+
+            //    //астероид взорвался "до конца" - можно его удалять со сцены
+            //    if (_asteroids[i].IsBlow)
+            //    {
+            //        _asteroids[i] = null;
+            //        continue;
+            //    }
+
+            //    //Пуля попала в Астероид
+            //    if (_bullet != null && _bullet.Collision( _asteroids[i] ))
+            //    {
+            //        System.Media.SystemSounds.Hand.Play();
+            //        _bullet = null;
+            //        _asteroids[i].StartBlow();
+
+            //        continue;
+            //    }
+            //    if (!_ship.Collision( _asteroids[i] )) continue;
+
+            //    if (!( _asteroids[i].IsBlow ))
+            //    {
+            //        _ship?.EnergyLow( _asteroids[i].Power );
+            //        _asteroids[i].StartBlow();
+            //        System.Media.SystemSounds.Asterisk.Play();
+            //    }
+            //    if (_ship.Energy <= 0) _ship?.Die();
+            //}
         }
 
         /// <summary>
@@ -258,29 +308,12 @@ namespace Asteroids
         /// </summary>
         public static void Load()
         {
-
             //коллекции объектов
-            _asteroids = new Asteroid[8];
-            _aidkits = new AidKit[2];
             _objs = new BaseObject[30];
 
             //летающая тарелка
             _objs[0] = new Ufo( new Point( 15, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ), ObjectSkinManager.GetImages( typeof( Ufo ) ), Game.Width, Game.Height );
 
-            //астероиды
-            for (int i = 0; i < _asteroids.Length; i++)
-            {
-                int r = rand.Next( 5, 50 );
-                _asteroids[i] = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), Game.Width, Game.Height );
-                _asteroids[i].EventAstBlow += Game_EventAstBlow;
-            }
-
-            //аптечки
-            for (int i = 0; i < _aidkits.Length; i++)
-            {
-                int r = rand.Next( 5, 50 );
-                _aidkits[i] = new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ), ObjectSkinManager.GetImages( typeof( AidKit ) ), Game.Width, Game.Height );
-            }
 
             //звездная пыль
             for (int i = 1; i <= 19; i++)
@@ -296,6 +329,52 @@ namespace Asteroids
 
             //Корабль
             _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ), ObjectSkinManager.GetImages( typeof( Ship ) ), Game.Width, Game.Height );
+        }
+
+        public static void NewWaveCreate()
+        {
+
+            //пули
+            if (_bullets.Count != 0) _bullets.Clear();
+
+            if (gameWaveSpoilerCounter < 50)
+            {
+                if (gameWaveSpoilerCounter % 2 == 0)
+                {
+                    Buffer.Graphics.DrawString( "The new wave!", new Font( FontFamily.GenericSansSerif, 60, FontStyle.Underline ), Brushes.White, 150, 100 );
+                    Buffer.Render();
+                }
+                gameWaveSpoilerCounter++;
+                return;
+            }
+
+            //астероиды
+            int i = 1;
+            while (i < gameWaveCounter + 7)
+            {
+                int r = rand.Next( 5, 50 );
+                Asteroid asteroid = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), Game.Width, Game.Height );
+                asteroid.EventAstBlow += Game_EventAstBlow;
+                _asteroids.Add( asteroid );
+
+                i++;
+            }
+
+            //аптечки
+            for (int j = 0; i < 3; j++)
+            {
+                int r = rand.Next( 5, 50 );
+                _aidkits.Add( new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ), ObjectSkinManager.GetImages( typeof( AidKit ) ), Game.Width, Game.Height ) );
+            }
+
+            GameLog.Write( $"Новая волна астероидов. Количество: {_asteroids.Count}" );
+
+            //увеличиваем счетчик волн
+            gameWaveCounter++;
+
+            //сбрасываем счетчик кадров для надписи
+            gameWaveSpoilerCounter = 0;
+
         }
 
         /// <summary>
