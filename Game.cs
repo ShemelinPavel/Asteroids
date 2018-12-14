@@ -444,11 +444,12 @@ namespace Asteroids
         /// </summary>
         public static void Finish()
         {
-            GameLog.Write( $"Игра завершена. Очков набрано: {gameScore}. Дата: {DateTime.Now}" );
+            GameLog.Write( $"Игра завершена. Волн пройдено{gameWaveCounter}. Очков набрано: {gameScore}. Дата: {DateTime.Now}" );
 
             _timer.Stop();
             Buffer.Graphics.DrawString( "The End", new Font( FontFamily.GenericSansSerif, 60, FontStyle.Underline ), Brushes.White, 200, 100 );
             Buffer.Graphics.DrawString( $"The game score: {gameScore}", new Font( FontFamily.GenericSansSerif, 30, FontStyle.Underline ), Brushes.White, 175, 200 );
+            Buffer.Graphics.DrawString( $"The enemy wave: {gameWaveCounter}", new Font( FontFamily.GenericSansSerif, 30, FontStyle.Underline ), Brushes.White, 175, 300 );
             Buffer.Render();
         }
     }
