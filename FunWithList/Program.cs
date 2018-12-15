@@ -8,7 +8,7 @@ namespace FunWithList
 {
     class Program
     {
-
+        //Func не может возвращать анонимный класс - нужен тип
         struct MyStru
         {
             public int key;
@@ -31,8 +31,8 @@ namespace FunWithList
             }
             #endregion LINQ
 
-            #region Расширение + анонимные делегаты
-            Console.WriteLine( "\nРасширение + анонимные делегаты" );
+            #region Расширение + обобщенные делегаты
+            Console.WriteLine( "\nРасширение + обобщенные делегаты" );
             Func<int, int> qq = delegate ( int s ) { return s; };
             Func<IGrouping<int, int>, MyStru> cc = delegate ( IGrouping<int, int> s ) { return new MyStru { key = s.Key, count = s.Count() }; };
             var selection2 = list.GroupBy( qq ).Select( cc );
@@ -40,8 +40,7 @@ namespace FunWithList
             {
                 Console.WriteLine( $"Значение: <{item.key}> встречается: {item.count} раз" );
             }
-            #endregion Расширение + анонимные делегаты
-
+            #endregion Расширение + обобщенные делегаты
 
             #region Расширение + Лямбда
             Console.WriteLine( "\nРасширение + Лямбда" );
