@@ -139,15 +139,10 @@ namespace Asteroids
         /// </summary>
         protected Image[] ImageColl;
         /// <summary>
-        /// максимальная ширина экрана
+        /// описание границы экрана через точку на ней
         /// </summary>
-        protected int MaxWidth;
-        /// <summary>
-        /// максимальная высота экрана
-        /// </summary>
-        protected int MaxHeight;
-
-
+        protected Point ScreenLimitPoint;
+ 
         /// <summary>
         /// прямоугольник по размеру текущего объекта
         /// </summary>
@@ -160,16 +155,14 @@ namespace Asteroids
         /// <param name="dir">скорость и направление смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxWidth">макс. ширина экрана игры</param>
-        /// <param name="maxHeight">макс. высота экрана игры</param>
-        protected BaseObject( Point pos, Point dir, Size size, Image[] images, int maxWidth, int maxHeight )
+        /// <param name="limit">граница экрана в виде точки</param>
+        protected BaseObject( Point pos, Point dir, Size size, Image[] images, Point limit )
         {
             Pos = pos;
             Dir = dir;
             Size = size;
             ImageColl = images;
-            MaxWidth = maxWidth;
-            MaxHeight = maxHeight;
+            ScreenLimitPoint = limit;
         }
 
 
@@ -219,9 +212,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public Star( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh ) { }
+        /// <param name="lim">граница экрана</param>
+        public Star( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim ) { }
 
         /// <summary>
         /// вычисление новых координат объекта Звезда
@@ -237,7 +229,7 @@ namespace Asteroids
         /// </summary>
         public void Reset()
         {
-            this.Pos.X = this.MaxWidth + Size.Width;
+            this.Pos.X = this.ScreenLimitPoint.X + Size.Width;
         }
 
         /// <summary>
@@ -305,9 +297,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public Asteroid( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">граница экрана</param>
+        public Asteroid( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
             Power = rand.Next( 1, 11 );
             blowCounter = 0;
@@ -348,9 +339,9 @@ namespace Asteroids
                     Pos.X = Pos.X + Dir.X;
                     Pos.Y = Pos.Y + Dir.Y;
                     if (Pos.X < 0) Dir.X = -Dir.X;
-                    if (Pos.X > this.MaxWidth) Dir.X = -Dir.X;
+                    if (Pos.X > this.ScreenLimitPoint.X) Dir.X = -Dir.X;
                     if (Pos.Y < 0) Dir.Y = -Dir.Y;
-                    if (Pos.Y > this.MaxHeight) Dir.Y = -Dir.Y;
+                    if (Pos.Y > this.ScreenLimitPoint.Y) Dir.Y = -Dir.Y;
                 }
                 else if (blowCounter == 3)
                 {
@@ -419,9 +410,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public Ufo( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">граница экрана</param>
+        public Ufo( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
         }
 
@@ -431,14 +421,14 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X - Dir.X;
-            if (Pos.X > this.MaxWidth) this.Reset();
+            if (Pos.X > this.ScreenLimitPoint.X) this.Reset();
         }
 
         //обработка покидания границ экрана
         public void Reset()
         {
             Pos.X = 0;
-            Pos.Y = rand.Next( this.MaxHeight );
+            Pos.Y = rand.Next( this.ScreenLimitPoint.Y );
         }
 
         /// <summary>
@@ -465,9 +455,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public StarDust( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">граница экрана</param>
+        public StarDust( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
         }
 
@@ -494,7 +483,7 @@ namespace Asteroids
         /// </summary>
         public void Reset()
         {
-            this.Pos.X = this.MaxWidth + Size.Width;
+            this.Pos.X = this.ScreenLimitPoint.X + Size.Width;
         }
 
         /// <summary>
@@ -528,9 +517,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public Bullet( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">максимальный размер экрана</param>
+        public Bullet( Point pos, Point dir, Size size, Image[] images, Point lim) : base( pos, dir, size, images, lim )
         {
         }
 
@@ -554,7 +542,7 @@ namespace Asteroids
         public override void Update()
         {
             Pos.X = Pos.X + 6;
-            if (Pos.X > this.MaxWidth) this.Reset();
+            if (Pos.X > this.ScreenLimitPoint.X) this.Reset();
         }
 
         /// <summary>
@@ -630,9 +618,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public Ship( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">максимальный размер экрана</param>
+        public Ship( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
         }
 
@@ -656,7 +643,7 @@ namespace Asteroids
         /// </summary>
         public void Down()
         {
-            if (Pos.Y < this.MaxHeight) Pos.Y = Pos.Y + Dir.Y;
+            if (Pos.Y < this.ScreenLimitPoint.Y) Pos.Y = Pos.Y + Dir.Y;
         }
 
         /// <summary>
@@ -696,9 +683,8 @@ namespace Asteroids
         /// <param name="dir">направление и скорость смещения объекта</param>
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
-        /// <param name="maxw">макс. ширина экрана игры</param>
-        /// <param name="maxh">макс. высота экрана игры</param>
-        public AidKit( Point pos, Point dir, Size size, Image[] images, int maxw, int maxh ) : base( pos, dir, size, images, maxw, maxh )
+        /// <param name="lim">максимальный размер экрана</param>
+        public AidKit( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
             Power = 20;
         }
@@ -711,9 +697,9 @@ namespace Asteroids
             Pos.X = Pos.X + Dir.X;
             Pos.Y = Pos.Y + Dir.Y;
             if (Pos.X < 0) Dir.X = -Dir.X;
-            if (Pos.X > this.MaxWidth) Dir.X = -Dir.X;
+            if (Pos.X > this.ScreenLimitPoint.X) Dir.X = -Dir.X;
             if (Pos.Y < 0) Dir.Y = -Dir.Y;
-            if (Pos.Y > this.MaxHeight) Dir.Y = -Dir.Y;
+            if (Pos.Y > this.ScreenLimitPoint.Y) Dir.Y = -Dir.Y;
         }
 
         /// <summary>
