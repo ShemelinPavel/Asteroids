@@ -90,6 +90,11 @@ namespace Asteroids
         private static int gameWaveSpoilerCounter;
 
         /// <summary>
+        /// граница экрана в виде точки
+        /// </summary>
+        private static Point ScreenLim;
+
+        /// <summary>
         /// конструктор
         /// </summary>
         static Game()
@@ -125,6 +130,8 @@ namespace Asteroids
             // Запоминаем размеры формы
             Width = form.ClientSize.Width;
             Height = form.ClientSize.Height;
+
+            ScreenLim = new Point( Width, Height );
             // Связываем буфер в памяти с графическим объектом, чтобы рисовать в буфере
             Buffer = _context.Allocate( g, new Rectangle( 0, 0, Width, Height ) );
 
@@ -151,7 +158,7 @@ namespace Asteroids
         {
             if (e.KeyCode == Keys.ControlKey)
             {
-                Bullet bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ), ObjectSkinManager.GetImages( typeof( Bullet ) ), Game.Width, Game.Height );
+                Bullet bullet = new Bullet( new Point( _ship.Rect.X + 35, _ship.Rect.Y + 13 ), new Point( 4, 0 ), new Size( 4, 1 ), ObjectSkinManager.GetImages( typeof( Bullet ) ), ScreenLim );
                 bullet.EventBulletShot += _bullet_EventBulletShot;
                 bullet.EventObjectCollision += _bullet_EventObjectCollision;
 
@@ -312,30 +319,33 @@ namespace Asteroids
             _objs = new BaseObject[30];
 
             //летающая тарелка
-            _objs[0] = new Ufo( new Point( 15, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ), ObjectSkinManager.GetImages( typeof( Ufo ) ), Game.Width, Game.Height );
+            _objs[0] = new Ufo( new Point( 15, rand.Next( Height ) ), new Point( -8, 0 ), new Size( 40, 40 ), ObjectSkinManager.GetImages( typeof( Ufo ) ), ScreenLim );
 
 
             //звездная пыль
             for (int i = 1; i <= 19; i++)
             {
-                _objs[i] = new StarDust( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ), ObjectSkinManager.GetImages( typeof( StarDust ) ), Game.Width, Game.Height );
+                _objs[i] = new StarDust( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 3, 3 ), ObjectSkinManager.GetImages( typeof( StarDust ) ), ScreenLim );
             }
 
             //звезды
             for (int i = 20; i < _objs.Length; i++)
             {
-                _objs[i] = new Star( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ), ObjectSkinManager.GetImages( typeof( Star ) ), Game.Width, Game.Height );
+                _objs[i] = new Star( new Point( Game.Width, rand.Next( 0, Height ) ), new Point( i, 0 ), new Size( 15, 15 ), ObjectSkinManager.GetImages( typeof( Star ) ), ScreenLim );
             }
 
             //Корабль
-            _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ), ObjectSkinManager.GetImages( typeof( Ship ) ), Game.Width, Game.Height );
+            _ship = new Ship( new Point( 10, 400 ), new Point( 5, 5 ), new Size( 36, 26 ), ObjectSkinManager.GetImages( typeof( Ship ) ), ScreenLim );
         }
 
         public static void NewWaveCreate()
         {
 
-            //пули
+            //удаляем пули прошлой "волны"
             if (_bullets.Count != 0) _bullets.Clear();
+
+            //удаляем аптечки прошлой "волны"
+            if (_aidkits.Count != 0) _aidkits.Clear();
 
             if (gameWaveSpoilerCounter < 50)
             {
@@ -353,7 +363,7 @@ namespace Asteroids
             while (i < gameWaveCounter + 7)
             {
                 int r = rand.Next( 5, 50 );
-                Asteroid asteroid = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), Game.Width, Game.Height );
+                Asteroid asteroid = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), ScreenLim );
                 asteroid.EventAstBlow += Game_EventAstBlow;
                 _asteroids.Add( asteroid );
 
@@ -361,10 +371,10 @@ namespace Asteroids
             }
 
             //аптечки
-            for (int j = 0; i < 3; j++)
+            for (int j = 0; j < 3; j++)
             {
                 int r = rand.Next( 5, 50 );
-                _aidkits.Add( new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ), ObjectSkinManager.GetImages( typeof( AidKit ) ), Game.Width, Game.Height ) );
+                _aidkits.Add( new AidKit( new Point( Game.Width - 10, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( 35, 35 ), ObjectSkinManager.GetImages( typeof( AidKit ) ), ScreenLim ) );
             }
 
             GameLog.Write( $"Новая волна астероидов. Количество: {_asteroids.Count}" );
