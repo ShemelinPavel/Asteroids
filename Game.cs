@@ -95,6 +95,11 @@ namespace Asteroids
         private static Point ScreenLim;
 
         /// <summary>
+        /// минимальное число астероидов первой "волны"
+        /// </summary>
+        const int MinAsteroidCount = 7;
+
+        /// <summary>
         /// конструктор
         /// </summary>
         static Game()
@@ -360,7 +365,7 @@ namespace Asteroids
 
             //астероиды
             int i = 1;
-            while (i < gameWaveCounter + 7)
+            while (i < MinAsteroidCount + gameWaveCounter)
             {
                 int r = rand.Next( 5, 50 );
                 Asteroid asteroid = new Asteroid( new Point( Game.Width, rand.Next( 0, Game.Height ) ), new Point( -r / 5, r ), new Size( r, r ), ObjectSkinManager.GetImages( typeof( Asteroid ) ), ScreenLim );
