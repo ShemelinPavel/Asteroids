@@ -142,7 +142,7 @@ namespace Asteroids
         /// описание границы экрана через точку на ней
         /// </summary>
         protected Point ScreenLimitPoint;
- 
+
         /// <summary>
         /// прямоугольник по размеру текущего объекта
         /// </summary>
@@ -518,7 +518,7 @@ namespace Asteroids
         /// <param name="size">размер объекта</param>
         /// <param name="images">коллекция скинов объекта</param>
         /// <param name="lim">максимальный размер экрана</param>
-        public Bullet( Point pos, Point dir, Size size, Image[] images, Point lim) : base( pos, dir, size, images, lim )
+        public Bullet( Point pos, Point dir, Size size, Image[] images, Point lim ) : base( pos, dir, size, images, lim )
         {
         }
 
