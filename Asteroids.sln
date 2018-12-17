@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids", "Asteroids.csproj", "{480FC8BC-5D50-4A13-838D-E383C8E66103}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunWithList", "FunWithList\FunWithList.csproj", "{5FE5758C-111B-4EB2-A6B5-726194D10F7E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{480FC8BC-5D50-4A13-838D-E383C8E66103}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{480FC8BC-5D50-4A13-838D-E383C8E66103}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{480FC8BC-5D50-4A13-838D-E383C8E66103}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{480FC8BC-5D50-4A13-838D-E383C8E66103}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FE5758C-111B-4EB2-A6B5-726194D10F7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FE5758C-111B-4EB2-A6B5-726194D10F7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FE5758C-111B-4EB2-A6B5-726194D10F7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FE5758C-111B-4EB2-A6B5-726194D10F7E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {078BF46C-C632-4BE8-8272-B0CBD18D7BDD}
+	EndGlobalSection
+EndGlobal
